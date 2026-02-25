@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Jogo da Velha</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+    .cell {
+      background-color: #222;
+      border: 2px solid white;
+      font-size: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #controls {
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    select {
+      padding: 5px;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Jogo da Velha</h1>
+  <div id="board"></div>
+  <div id="controls">
+    <button onclick="resetGame()">Reiniciar</button>
+    <label for="difficulty">Dificuldade:</label>
+    <select id="difficulty" onchange="resetGame()">
+      <option value="easy">Fácil</option>
+      <option value="medium">Médio</option>
+      <option value="hard">Difícil</option>
+    </select>
+  </div>
+  <p id="status"></p>
+
+  <script>
+    const boardElement = document.getElementById("board");
+    const statusElement = document.getElementById("status");
+    let board = Array(9).fill(null);
+    let currentPlayer = "X";
+
+    // Cria o tabuleiro
+    function createBoard() {
+      boardElement.innerHTML = "";
+      board.forEach((cell, index) => {
+        const div = document.createElement("div");
+        div.classList.add("cell");
+        div.dataset.index = index;
+        div.textContent = cell || "";
+        div.addEventListener("click", handleClick);
+        boardElement.appendChild(div);
+      });
+    }
+
+    // Jogada do jogador
+    function handleClick(e) {
+      const index = e.target.dataset.index;
+      if (!board[index] && currentPlayer === "X") {
+        board[index] = "X";
+        currentPlayer = "O";
+        createBoard();
+        checkWinner();
+        if (!isGameOver()) {
+          setTimeout(computerMove, 500);
+        }
+      }
+    }
+
+    // Jogada do computador
+    function computerMove() {
+      const difficulty = document.getElementById("difficulty").value;
+      let move;
+
+      if (difficulty === "easy") {
+        // Movimento aleatório
+        const available = board.map((v, i) => v ? null : i).filter(v => v !== null);
+        move = available[Math.floor(Math.random() * available.length)];
+      } else if (difficulty === "medium") {
+        // Tenta ganhar ou bloquear
+        move = findBestMove("O") || findBestMove("X");
+        if (move === null) {
+          const available = board.map((v, i) => v ? null : i).filter(v => v !== null);
+          move = available[Math.floor(Math.random() * available.length)];
+        }
+      } else {
+        // Difícil: minimax
+        move = minimax(board, "O").index;
+      }
+
+      board[move] = "O";
+      currentPlayer = "X";
+      createBoard();
+      checkWinner();
+    }
+
+    // Verifica vencedor
+    function checkWinner() {
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      for (let pattern of winPatterns) {
+        const [a,b,c] = pattern;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          statusElement.textContent = `Jogador ${board[a]} venceu!`;
+          currentPlayer = null;
+          return;
+        }
+      }
+      if (!board.includes(null)) {
+        statusElement.textContent = "Empate!";
+        currentPlayer = null;
+      }
+    }
+
+    function isGameOver() {
+      return currentPlayer === null;
+    }
+
+    // Reiniciar
+    function resetGame() {
+      board = Array(9).fill(null);
+      currentPlayer = "X";
+      statusElement.textContent = "";
+      createBoard();
+    }
+
+    // Função auxiliar para nível médio
+    function findBestMove(player) {
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      for (let pattern of winPatterns) {
+        const [a,b,c] = pattern;
+        const values = [board[a], board[b], board[c]];
+        if (values.filter(v => v === player).length === 2 && values.includes(null)) {
+          return pattern[values.indexOf(null)];
+        }
+      }
+      return null;
+    }
+
+    // Minimax para nível difícil
+    function minimax(newBoard, player) {
+      const availSpots = newBoard.map((v, i) => v ? null : i).filter(v => v !== null);
+
+      if (checkWin(newBoard, "X")) return {score: -10};
+      if (checkWin(newBoard, "O")) return {score: 10};
+      if (availSpots.length === 0) return {score: 0};
+
+      const moves = [];
+      for (let i of availSpots) {
+        const move = {};
+        move.index = i;
+        newBoard[i] = player;
+
+        if (player === "O") {
+          const result = minimax(newBoard, "X");
+          move.score = result.score;
+        } else {
+          const result = minimax(newBoard, "O");
+          move.score = result.score;
+        }
+
+        newBoard[i] = null;
+        moves.push(move);
+      }
+
+      let bestMove;
+      if (player === "O") {
+        let bestScore = -Infinity;
+        for (let m of moves) {
+          if (m.score > bestScore) {
+            bestScore = m.score;
+            bestMove = m;
+          }
+        }
+      } else {
+        let bestScore = Infinity;
+        for (let m of moves) {
+          if (m.score < bestScore) {
+            bestScore = m.score;
+            bestMove = m;
+          }
+        }
+      }
+      return bestMove;
+    }
+
+    function checkWin(board, player) {
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      return winPatterns.some(pattern => 
+        pattern.every(i => board[i] === player)
+      );
+    }
+
+    // Inicializa
+    createBoard();
+  </script>
+</body>
+</html>
