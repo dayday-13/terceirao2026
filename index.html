@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Figurinhas Copa - App (Criar Conta)</title>
+<style>
+  :root{
+    --bg1: #0f172a; --bg2:#07103a;
+    --card:#ffffff; --muted:#6b7280;
+    --accent1:#ff3d81; --accent2:#ffd400; --accent3:#00f5a0;
+    --glass: rgba(255,255,255,0.06);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Inter,system-ui,Arial; min-height:100vh;
+    background: linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:#fff; -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column;
+  }
+  header{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; gap:12px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    position:sticky; top:0; z-index:50; backdrop-filter: blur(6px);
+  }
+  .brand{ display:flex; gap:12px; align-items:center }
+  .logo{ width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    font-weight:800; color:#000; background: linear-gradient(135deg,var(--accent2),var(--accent1)); box-shadow:0 8px 30px rgba(0,0,0,0.4);
+  }
+  h1{ margin:0; font-size:18px }
+  .controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  input[type="search"], select, button{ padding:8px 12px; border-radius:10px; border:none; font-size:14px }
+  .btn{ cursor:pointer; }
+  .btn.primary{ background: linear-gradient(90deg,var(--accent1),var(--accent3)); color:#000; font-weight:700; box-shadow:0 8px 20px rgba(0,0,0,0.35) }
+  .btn.ghost{ background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.06) }
+  main{ padding:18px; display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
+  .left{ flex:1; min-width:320px }
+  .right{ width:320px; min-width:260px }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px }
+  .card{ background:var(--card); color:#000; border-radius:12px; overflow:hidden; position:relative;
+    box-shadow:0 12px 30px rgba(0,0,0,0.45); transition:transform .22s, box-shadow .22s; cursor:pointer;
+  }
+  .card:hover{ transform:translateY(-8px) scale(1.02); box-shadow:0 28px 60px rgba(0,0,0,0.5) }
+  .card img{ width:100%; height:140px; object-fit:cover; display:block; background:#eee }
+  .meta{ padding:10px; text-align:center }
+  .name{ font-weight:800; font-size:14px; margin-bottom:6px }
+  .sub{ font-size:12px; color:#666 }
+  .badge{ position:absolute; left:10px; top:10px; background:var(--glass); color:#fff; padding:6px 8px; border-radius:8px; font-size:12px }
+  .collect-btn{ position:absolute; right:10px; top:10px; background:linear-gradient(90deg,var(--accent3),var(--accent2)); color:#000; padding:6px 8px; border-radius:8px; border:none; font-weight:800; cursor:pointer }
+  .panel{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:12px; margin-bottom:12px }
+  .stat{ font-weight:700; color:var(--accent2) }
+  .modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); z-index:80 }
+  .hidden{ display:none }
+  .modal-card{ width:420px; max-width:94%; background:#fff; color:#000; border-radius:12px; padding:16px; position:relative; box-shadow:0 30px 80px rgba(0,0,0,0.6) }
+  .close{ position:absolute; right:10px; top:8px; background:transparent; border:none; font-size:20px; cursor:pointer }
+  .profile{ display:flex; flex-direction:column; gap:12px }
+  .profile .avatar{ width:100%; height:140px; border-radius:10px; background:linear-gradient(90deg,var(--accent1),var(--accent2)); display:flex; align-items:center; justify-content:center; font-size:22px; color:#000; font-weight:800 }
+  .toast{ position:fixed; right:18px; bottom:18px; background:linear-gradient(90deg,var(--accent3),var(--accent1)); color:#000; padding:10px 14px; border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,0.4); z-index:90 }
+  @media (max-width:980px){ main{ flex-direction:column } .right{ width:100% } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">Á</div>
+    <div>
+      <h1>Figurinhas Copa</h1>
+      <div style="font-size:12px; color:#cbd5e1">Colecione, abra pacotes e compartilhe seu perfil</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <input id="searchInput" type="search" placeholder="Buscar jogador ou seleção" />
+    <select id="countryFilter"><option value="all">Todas seleções</option></select>
+    <button id="openPack" class="btn primary">Abrir Pacote</button>
+    <div id="userArea"></div>
+  </div>
+</header>
+
+<main>
+  <section class="left">
+    <div class="panel" style="display:flex; justify-content:space-between; align-items:center">
+      <div>
+        <div style="font-size:13px; color:#cbd5e1">Bem-vindo</div>
+        <div class="stat" id="welcomeName">Visitante</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px; color:#cbd5e1">Total no álbum</div>
+        <div class="stat" id="totalCards">0</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px; display:flex; gap:12px; align-items:center">
+      <div>
+        <div style="font-size:13px; color:#cbd5e1">Coletadas</div>
+        <div class="stat" id="collectedCount">0</div>
+      </div>
+      <div>
+        <div style="font-size:13px; color:#cbd5e1">Repetidas</div>
+        <div class="stat" id="duplicatesCount">0</div>
+      </div>
+      <div style="margin-left:auto">
+        <button id="btnAddCard" class="btn ghost">Cadastrar figurinha</button>
+      </div>
+    </div>
+
+    <div id="album" class="grid" aria-live="polite"></div>
+  </section>
+
+  <aside class="right">
+    <div class="panel profile">
+      <div class="avatar" id="profileAvatar">—</div>
+      <div>
+        <div style="font-size:13px; color:#cbd5e1">Usuário</div>
+        <div class="stat" id="profileName">Visitante</div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:8px">
+        <button id="btnViewProfile" class="btn ghost">Ver meu perfil</button>
+        <button id="btnShareProfile" class="btn ghost">Compartilhar perfil</button>
+      </div>
+      <div style="margin-top:8px; font-size:13px; color:#cbd5e1">Dica: abra pacotes para ganhar figurinhas novas</div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <div style="font-size:13px; color:#cbd5e1">Filtros rápidos</div>
+      <div style="display:flex; gap:8px; margin-top:8px">
+        <button id="filterAll" class="btn ghost">Todas</button>
+        <button id="filterCollected" class="btn ghost">Minhas</button>
+        <button id="filterMissing" class="btn ghost">Faltam</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- Modais (mantidos) -->
+<div id="playerModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card">
+    <button class="close" id="closePlayer">×</button>
+    <img id="modalImg" src="" alt="" style="width:100%; height:220px; object-fit:cover; border-radius:8px" />
+    <h3 id="modalName" style="margin-top:10px"></h3>
+    <p id="modalInfo" style="color:#444"></p>
+    <div style="display:flex; gap:8px; justify-content:center; margin-top:12px">
+      <button id="modalCollectBtn" class="btn primary">Marcar como minha</button>
+      <button id="modalCloseBtn" class="btn ghost">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div id="authModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card">
+    <button class="close" id="closeAuth">×</button>
+    <h3 id="authTitle">Criar conta</h3>
+
+    <!-- REGISTER shown by default -->
+    <div id="registerForm">
+      <div style="margin-bottom:8px"><input id="regUser" placeholder="Usuário" /></div>
+      <div style="margin-bottom:8px"><input id="regPass" type="password" placeholder="Senha" /></div>
+      <div style="margin-bottom:8px"><input id="regName" placeholder="Nome" /></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end">
+        <button id="showLogin" class="btn ghost">Já tenho conta</button>
+        <button id="doRegister" class="btn primary">Criar conta</button>
+      </div>
+    </div>
+
+    <!-- LOGIN hidden by default -->
+    <div id="loginForm" class="hidden">
+      <div style="margin-bottom:8px"><input id="loginUser" placeholder="Usuário" /></div>
+      <div style="margin-bottom:8px"><input id="loginPass" type="password" placeholder="Senha" /></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end">
+        <button id="showRegister" class="btn ghost">Criar conta</button>
+        <button id="doLogin" class="btn primary">Entrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="addModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card">
+    <button class="close" id="closeAdd">×</button>
+    <h3>Cadastrar Figurinha</h3>
+    <div style="margin-bottom:8px"><input id="cardName" placeholder="Nome do jogador" /></div>
+    <div style="margin-bottom:8px"><input id="cardCountry" placeholder="Seleção" /></div>
+    <div style="margin-bottom:8px"><input id="cardPosition" placeholder="Posição" /></div>
+    <div style="margin-bottom:8px"><input id="cardImage" type="file" accept="image/*" /></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end">
+      <button id="doAddCard" class="btn primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="shareModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card">
+    <button class="close" id="closeShare">×</button>
+    <h3>Compartilhar Perfil</h3>
+    <p>Ative o perfil público para gerar um link que outros usuários podem abrir.</p>
+    <div style="display:flex; gap:8px; align-items:center">
+      <div id="publicStatus"></div>
+      <button id="togglePublic" class="btn ghost">Ativar/Desativar público</button>
+    </div>
+    <div id="shareArea" style="margin-top:12px" class="hidden">
+      <div class="share-link" id="shareLink"></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px">
+        <button id="copyShare" class="btn primary">Copiar link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="publicViewModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card" style="width:720px; max-width:96%; text-align:left">
+    <button class="close" id="closePublicView">×</button>
+    <h3 id="publicViewTitle">Perfil público</h3>
+    <div id="publicViewInfo" style="margin-top:8px"></div>
+    <hr style="margin:12px 0">
+    <div id="publicCollected" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<script>
+/* Utilitários e storage (mesma lógica do app anterior) */
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async function sha256(text){ const enc = new TextEncoder(); const data = enc.encode(text); const hash = await crypto.subtle.digest('SHA-256', data); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+function randHex(len=48){ const arr = new Uint8Array(len/2); crypto.getRandomValues(arr); return Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+function showToast(msg, ms=2200){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(()=> t.classList.add('hidden'), ms); }
+
+const PLAYERS_KEY = 'copa_players_v1';
+const USERS_KEY = 'copa_users_v1';
+const SESSION_KEY = 'copa_session_v1';
+
+const DEFAULT_PLAYERS = [
+  {id:1,name:'Jogador A',country:'Brasil',position:'Atacante',photo:placeholderSVG('Jogador A')},
+  {id:2,name:'Jogador B',country:'Argentina',position:'Meio-campo',photo:placeholderSVG('Jogador B')},
+  {id:3,name:'Jogador C',country:'França',position:'Atacante',photo:placeholderSVG('Jogador C')},
+  {id:4,name:'Jogador D',country:'Portugal',position:'Atacante',photo:placeholderSVG('Jogador D')},
+  {id:5,name:'Jogador E',country:'Brasil',position:'Goleiro',photo:placeholderSVG('Jogador E')},
+  {id:6,name:'Jogador F',country:'Espanha',position:'Defensor',photo:placeholderSVG('Jogador F')},
+  {id:7,name:'Jogador G',country:'Alemanha',position:'Meio-campo',photo:placeholderSVG('Jogador G')},
+  {id:8,name:'Jogador H',country:'Inglaterra',position:'Atacante',photo:placeholderSVG('Jogador H')},
+  {id:9,name:'Jogador I',country:'México',position:'Atacante',photo:placeholderSVG('Jogador I')},
+  {id:10,name:'Jogador J',country:'Portugal',position:'Meio-campo',photo:placeholderSVG('Jogador J')}
+];
+
+function placeholderSVG(text){
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='36' fill='#111' font-family='Arial'>${escapeHtml(text)}</text></svg>`);
+}
+
+function loadPlayers(){ const raw = localStorage.getItem(PLAYERS_KEY); if(!raw){ localStorage.setItem(PLAYERS_KEY, JSON.stringify(DEFAULT_PLAYERS)); return DEFAULT_PLAYERS.slice(); } try{ return JSON.parse(raw); }catch(e){ return DEFAULT_PLAYERS.slice(); } }
+function savePlayers(list){ localStorage.setItem(PLAYERS_KEY, JSON.stringify(list)); }
+
+function loadUsersFromStorage(){ const raw = localStorage.getItem(USERS_KEY); return raw ? JSON.parse(raw) : {}; }
+function saveUsers(u){ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+
+function loadSession(){ const raw = localStorage.getItem(SESSION_KEY); return raw ? JSON.parse(raw) : null; }
+function saveSession(s){ if(s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); }
+
+/* Estado e elementos */
+let players = loadPlayers();
+let currentUser = loadSession();
+let currentViewed = null;
+
+const albumEl = document.getElementById('album');
+const totalCardsEl = document.getElementById('totalCards');
+const collectedCountEl = document.getElementById('collectedCount');
+const duplicatesCountEl = document.getElementById('duplicatesCount');
+const welcomeNameEl = document.getElementById('welcomeName');
+const profileNameEl = document.getElementById('profileName');
+const profileAvatarEl = document.getElementById('profileAvatar');
+const userAreaEl = document.getElementById('userArea');
+const countryFilterEl = document.getElementById('countryFilter');
+const searchInputEl = document.getElementById('searchInput');
+
+const playerModal = document.getElementById('playerModal');
+const modalImg = document.getElementById('modalImg');
+const modalName = document.getElementById('modalName');
+const modalInfo = document.getElementById('modalInfo');
+const modalCollectBtn = document.getElementById('modalCollectBtn');
+
+const authModal = document.getElementById('authModal');
+const loginFormEl = document.getElementById('loginForm');
+const registerFormEl = document.getElementById('registerForm');
+
+const addModal = document.getElementById('addModal');
+
+const shareModal = document.getElementById('shareModal');
+const shareArea = document.getElementById('shareArea');
+const shareLinkEl = document.getElementById('shareLink');
+const publicStatusEl = document.getElementById('publicStatus');
+
+/* UI helpers */
+function populateFilter(){
+  const countries = [...new Set(players.map(p=>p.country))].sort();
+  countryFilterEl.innerHTML = '<option value="all">Todas seleções</option>';
+  countries.forEach(c=>{
+    const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
+    countryFilterEl.appendChild(opt);
+  });
+}
+
+function renderCards(list){
+  albumEl.innerHTML = '';
+  list.forEach((p, idx)=>{
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.dataset.id = p.id;
+    card.innerHTML = `
+      <div class="badge">${escapeHtml(p.country)}</div>
+      <button class="collect-btn" title="Marcar como minha">+</button>
+      <img src="${p.photo}" alt="${escapeHtml(p.name)}" />
+      <div class="meta"><div class="name">${escapeHtml(p.name)}</div><div class="sub">${escapeHtml(p.position)}</div></div>
+    `;
+    card.querySelector('img').addEventListener('click', ()=> openModal(p));
+    card.querySelector('.meta').addEventListener('click', ()=> openModal(p));
+    const collectBtn = card.querySelector('.collect-btn');
+    collectBtn.addEventListener('click', (e)=>{ e.stopPropagation(); if(!currentUser){ openAuth('register'); return; } toggleCollect(p.id); updateCollectButton(collectBtn,p.id); renderStats(); });
+    updateCollectButton(collectBtn,p.id);
+    albumEl.appendChild(card);
+    card.style.opacity = 0;
+    setTimeout(()=> card.style.opacity = 1, 40*idx);
+  });
+}
+
+function updateCollectButton(btn, playerId){
+  if(!currentUser){ btn.textContent = '+'; btn.style.background = 'linear-gradient(90deg,var(--accent3),var(--accent2))'; return; }
+  const users = loadUsersFromStorage();
+  const ud = users[currentUser.username] || {collected:[]};
+  const has = (ud.collected || []).includes(playerId);
+  btn.textContent = has ? '✓' : '+';
+  btn.style.background = has ? 'linear-gradient(90deg,#a3e635,#f59e0b)' : 'linear-gradient(90deg,var(--accent3),var(--accent2))';
+}
+
+function renderStats(){
+  totalCardsEl.textContent = players.length;
+  const users = loadUsersFromStorage();
+  let collected = 0, duplicates = 0;
+  if(currentUser){
+    const ud = users[currentUser.username] || {collected:[], duplicates:[]};
+    collected = ud.collected ? ud.collected.length : 0;
+    duplicates = ud.duplicates ? ud.duplicates.length : 0;
+  }
+  collectedCountEl.textContent = collected;
+  duplicatesCountEl.textContent = duplicates;
+  welcomeNameEl.textContent = currentUser ? (currentUser.name || currentUser.username) : 'Visitante';
+  profileNameEl.textContent = currentUser ? (currentUser.name || currentUser.username) : 'Visitante';
+  profileAvatarEl.textContent = currentUser ? (currentUser.name ? currentUser.name[0].toUpperCase() : currentUser.username[0].toUpperCase()) : '—';
+  renderUserArea();
+}
+
+/* Modal jogador */
+function openModal(p){
+  currentViewed = p;
+  modalImg.src = p.photo;
+  modalName.textContent = p.name;
+  modalInfo.textContent = `${p.country} — ${p.position}`;
+  if(!currentUser) modalCollectBtn.textContent = 'Marcar como minha (crie conta)';
+  else {
+    const users = loadUsersFromStorage(); const ud = users[currentUser.username] || {collected:[]};
+    modalCollectBtn.textContent = (ud.collected || []).includes(p.id) ? 'Remover das minhas' : 'Marcar como minha';
+  }
+  playerModal.classList.remove('hidden');
+}
+document.getElementById('closePlayer').addEventListener('click', ()=> playerModal.classList.add('hidden'));
+document.getElementById('modalCloseBtn').addEventListener('click', ()=> playerModal.classList.add('hidden'));
+modalCollectBtn.addEventListener('click', ()=>{
+  if(!currentUser){ openAuth('register'); return; }
+  if(!currentViewed) return;
+  toggleCollect(currentViewed.id);
+  const users = loadUsersFromStorage(); const ud = users[currentUser.username] || {collected:[]};
+  modalCollectBtn.textContent = (ud.collected || []).includes(currentViewed.id) ? 'Remover das minhas' : 'Marcar como minha';
+  renderCards(filteredPlayers());
+  renderStats();
+  playerModal.classList.add('hidden');
+});
+
+/* Collect logic */
+function toggleCollect(playerId){
+  const users = loadUsersFromStorage();
+  const ud = users[currentUser.username] || {password:'',name:currentUser.name, collected:[], duplicates:[]};
+  ud.collected = ud.collected || [];
+  ud.duplicates = ud.duplicates || [];
+  if(ud.collected.includes(playerId)){
+    ud.collected = ud.collected.filter(x=>x!==playerId);
+  } else {
+    if(ud.collected.includes(playerId)){
+      if(!ud.duplicates.includes(playerId)) ud.duplicates.push(playerId);
+    } else {
+      ud.collected.push(playerId);
+    }
+  }
+  users[currentUser.username] = ud;
+  saveUsers(users);
+}
+
+/* Auth UI: default to register */
+function openAuth(mode='register'){
+  if(mode==='register'){
+    document.getElementById('authTitle').textContent='Criar conta';
+    registerFormEl.classList.remove('hidden');
+    loginFormEl.classList.add('hidden');
+  } else {
+    document.getElementById('authTitle').textContent='Entrar';
+    registerFormEl.classList.add('hidden');
+    loginFormEl.classList.remove('hidden');
+  }
+  authModal.classList.remove('hidden');
+}
+document.getElementById('closeAuth').addEventListener('click', ()=> authModal.classList.add('hidden'));
+document.getElementById('showLogin').addEventListener('click', ()=> openAuth('login'));
+document.getElementById('showRegister').addEventListener('click', ()=> openAuth('register'));
+
+/* Register / Login */
+document.getElementById('doRegister').addEventListener('click', async ()=>{
+  const username = document.getElementById('regUser').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const name = document.getElementById('regName').value.trim();
+  if(!username || !pass){ alert('Preencha usuário e senha.'); return; }
+  const users = loadUsersFromStorage();
+  if(users[username]){ alert('Usuário já existe.'); return; }
+  const hash = await sha256(pass);
+  users[username] = { password: hash, name: name || username, collected: [], duplicates: [], public:false, token:null };
+  saveUsers(users);
+  currentUser = { username, name: users[username].name };
+  saveSession(currentUser);
+  authModal.classList.add('hidden');
+  renderStats();
+  showToast('Conta criada e logado');
+});
+
+document.getElementById('doLogin').addEventListener('click', async ()=>{
+  const username = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!username || !pass){ alert('Preencha usuário e senha.'); return; }
+  const users = loadUsersFromStorage();
+  if(!users[username]){ alert('Usuário ou senha inválidos.'); return; }
+  const hash = await sha256(pass);
+  if(users[username].password !== hash){ alert('Usuário ou senha inválidos.'); return; }
+  currentUser = { username, name: users[username].name || username };
+  saveSession(currentUser);
+  authModal.classList.add('hidden');
+  renderStats();
+  showToast('Logado');
+});
+
+/* Session helpers */
+function saveSession(u){ if(u) localStorage.setItem(SESSION_KEY, JSON.stringify(u)); else localStorage.removeItem(SESSION_KEY); }
+function loadUsersFromStorage(){ const raw = localStorage.getItem(USERS_KEY); return raw ? JSON.parse(raw) : {}; }
+
+/* Logout */
+function logout(){ currentUser = null; saveSession(null); renderStats(); showToast('Desconectado'); }
+
+/* Add figurinha */
+document.getElementById('btnAddCard').addEventListener('click', ()=> {
+  if(!currentUser){ openAuth('register'); return; }
+  addModal.classList.remove('hidden');
+});
+document.getElementById('closeAdd').addEventListener('click', ()=> addModal.classList.add('hidden'));
+document.getElementById('doAddCard').addEventListener('click', ()=>{
+  const name = document.getElementById('cardName').value.trim();
+  const country = document.getElementById('cardCountry').value.trim();
+  const position = document.getElementById('cardPosition').value.trim();
+  const file = document.getElementById('cardImage').files[0];
+  if(!name || !country || !position){ alert('Preencha todos os campos.'); return; }
+  if(!file){ alert('Envie uma imagem.'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const dataUrl = e.target.result;
+    const id = Date.now();
+    players.unshift({id,name,country,position,photo:dataUrl});
+    savePlayers(players);
+    populateFilter();
+    renderCards(filteredPlayers());
+    addModal.classList.add('hidden');
+    showToast('Figurinha cadastrada');
+  };
+  reader.readAsDataURL(file);
+});
+
+/* Abrir pacote */
+document.getElementById('openPack').addEventListener('click', ()=>{
+  if(players.length === 0){ showToast('Nenhuma figurinha disponível'); return; }
+  const pool = players.slice();
+  const pack = [];
+  while(pack.length < 5 && pool.length){
+    const i = Math.floor(Math.random()*pool.length);
+    pack.push(pool.splice(i,1)[0]);
+  }
+  const names = pack.map(p=>p.id);
+  const duplicatesInPack = names.filter((v,i,a)=> a.indexOf(v)!==i);
+  let alreadyHave = [];
+  if(currentUser){
+    const users = loadUsersFromStorage();
+    const ud = users[currentUser.username] || {collected:[]};
+    alreadyHave = pack.filter(p=> (ud.collected || []).includes(p.id) ).map(p=>p.name);
+    pack.forEach(p=>{
+      if((ud.collected || []).includes(p.id)){
+        ud.duplicates = ud.duplicates || [];
+        if(!ud.duplicates.includes(p.id)) ud.duplicates.push(p.id);
+      } else {
+        ud.collected = ud.collected || [];
+        ud.collected.push(p.id);
+      }
+    });
+    users[currentUser.username] = ud;
+    saveUsers(users);
+  }
+  let i = 0;
+  function showNext(){
+    if(i >= pack.length) return;
+    openModal(pack[i]);
+    i++;
+    setTimeout(showNext, 1200);
+  }
+  showNext();
+  if(duplicatesInPack.length) showToast('Pacote contém figurinhas repetidas entre si');
+  if(alreadyHave.length) showToast('Você já tinha: ' + alreadyHave.join(', '));
+  renderStats();
+});
+
+/* Share profile */
+document.getElementById('btnShareProfile').addEventListener('click', ()=> {
+  if(!currentUser){ openAuth('register'); return; }
+  shareArea.classList.add('hidden');
+  shareModal.classList.remove('hidden');
+  updateShareModal();
+});
+document.getElementById('closeShare').addEventListener('click', ()=> shareModal.classList.add('hidden'));
+document.getElementById('togglePublic').addEventListener('click', ()=>{
+  if(!currentUser) return;
+  const users = loadUsersFromStorage();
+  const ud = users[currentUser.username] || {public:false, token:null};
+  if(ud.public){ ud.public = false; ud.token = null; }
+  else { ud.public = true; ud.token = randHex(48); }
+  users[currentUser.username] = ud;
+  saveUsers(users);
+  updateShareModal();
+  renderStats();
+});
+function updateShareModal(){
+  const users = loadUsersFromStorage();
+  const ud = users[currentUser.username] || {public:false, token:null};
+  publicStatusEl.innerHTML = ud.public ? '<span style="color:#000;background:#a3e635;padding:6px;border-radius:8px">Público</span>' : '<span style="color:#fff;background:#ef4444;padding:6px;border-radius:8px">Privado</span>';
+  if(ud.public && ud.token){
+    const url = new URL(window.location.href);
+    url.searchParams.set('share', currentUser.username);
+    url.searchParams.set('token', ud.token);
+    shareLinkEl.textContent = url.toString();
+    shareArea.classList.remove('hidden');
+  } else {
+    shareArea.classList.add('hidden');
+  }
+}
+document.getElementById('copyShare').addEventListener('click', ()=>{
+  const text = shareLinkEl.textContent;
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(()=> showToast('Link copiado') ).catch(()=> alert('Não foi possível copiar'));
+});
+
+/* Public view from URL */
+function tryOpenPublicFromUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const share = params.get('share'); const token = params.get('token');
+  if(!share || !token) return;
+  const users = loadUsersFromStorage();
+  const ud = users[share];
+  if(!ud || !ud.public || ud.token !== token){ alert('Link inválido ou perfil não público'); return; }
+  openPublicView(share, ud);
+}
+function openPublicView(username, ud){
+  document.getElementById('publicViewTitle').textContent = 'Perfil público — ' + (ud.name || username);
+  document.getElementById('publicViewInfo').innerHTML = `<strong>Usuário:</strong> ${escapeHtml(ud.name || username)}<br><strong>Coletadas:</strong> ${ud.collected ? ud.collected.length : 0}`;
+  const publicCollected = document.getElementById('publicCollected');
+  publicCollected.innerHTML = '';
+  const collectedIds = ud.collected || [];
+  const collectedCards = players.filter(p=> collectedIds.includes(p.id));
+  if(collectedCards.length === 0) publicCollected.innerHTML = '<div style="color:#666">Nenhuma figurinha coletada.</div>';
+  else {
+    collectedCards.forEach(p=>{
+      const el = document.createElement('div'); el.style.background='#fff'; el.style.color='#000'; el.style.borderRadius='8px'; el.style.padding='8px';
+      el.innerHTML = `<img src="${p.photo}" style="width:100%;height:120px;object-fit:cover;border-radius:6px"><div style="font-weight:700;margin-top:6px">${escapeHtml(p.name)}</div><div style="font-size:12px;color:#444">${escapeHtml(p.country)} • ${escapeHtml(p.position)}</div>`;
+      publicCollected.appendChild(el);
+    });
+  }
+  document.getElementById('publicViewModal').classList.remove('hidden');
+}
+document.getElementById('closePublicView').addEventListener('click', ()=> document.getElementById('publicViewModal').classList.add('hidden'));
+
+/* Filters and search */
+function filteredPlayers(){
+  const q = (searchInputEl.value || '').trim().toLowerCase();
+  const country = countryFilterEl.value;
+  return players.filter(p=>{
+    const matchCountry = country === 'all' ? true : p.country === country;
+    const matchQuery = !q ? true : (p.name.toLowerCase().includes(q) || p.country.toLowerCase().includes(q) || p.position.toLowerCase().includes(q));
+    return matchCountry && matchQuery;
+  });
+}
+searchInputEl.addEventListener('input', ()=> renderCards(filteredPlayers()));
+countryFilterEl.addEventListener('change', ()=> renderCards(filteredPlayers()));
+document.getElementById('filterAll').addEventListener('click', ()=> { searchInputEl.value=''; countryFilterEl.value='all'; renderCards(filteredPlayers()); });
+document.getElementById('filterCollected').addEventListener('click', ()=> {
+  if(!currentUser){ openAuth('register'); return; }
+  const users = loadUsersFromStorage(); const ud = users[currentUser.username] || {collected:[]};
+  const list = players.filter(p=> (ud.collected||[]).includes(p.id));
+  renderCards(list);
+});
+document.getElementById('filterMissing').addEventListener('click', ()=> {
+  if(!currentUser){ openAuth('register'); return; }
+  const users = loadUsersFromStorage(); const ud = users[currentUser.username] || {collected:[]};
+  const list = players.filter(p=> !(ud.collected||[]).includes(p.id));
+  renderCards(list);
+});
+
+/* User area render: show "Criar conta" when not logged */
+function renderUserArea(){
+  userAreaEl.innerHTML = '';
+  if(currentUser){
+    const pill = document.createElement('div'); pill.style.display='inline-block'; pill.style.padding='8px 10px'; pill.style.borderRadius='999px'; pill.style.background='rgba(255,255,255,0.06)'; pill.textContent = currentUser.name || currentUser.username;
+    const btnLogout = document.createElement('button'); btnLogout.className='btn ghost'; btnLogout.textContent='Sair'; btnLogout.style.marginLeft='8px'; btnLogout.addEventListener('click', logout);
+    userAreaEl.appendChild(pill); userAreaEl.appendChild(btnLogout);
+  } else {
+    const btn = document.createElement('button'); btn.className='btn ghost'; btn.textContent='Criar conta'; btn.addEventListener('click', ()=> openAuth('register'));
+    userAreaEl.appendChild(btn);
+  }
+}
+
+/* Profile view (keeps same behavior) */
+document.getElementById('btnViewProfile').addEventListener('click', ()=>{
+  if(!currentUser){ openAuth('register'); return; }
+  document.getElementById('profileSection')?.classList?.toggle?.('hidden');
+  renderProfile();
+});
+function renderProfile(){
+  if(!currentUser) return;
+  const users = loadUsersFromStorage();
+  const ud = users[currentUser.username] || {collected:[]};
+  document.getElementById('profileInfo').innerHTML = `<strong>Usuário:</strong> ${escapeHtml(ud.name || currentUser.username)}<br><strong>Coletadas:</strong> ${ud.collected ? ud.collected.length : 0}`;
+  const profileGrid = document.getElementById('profileGrid');
+  if(!profileGrid) return;
+  profileGrid.innerHTML = '';
+  const collectedCards = players.filter(p=> (ud.collected||[]).includes(p.id));
+  if(collectedCards.length === 0) profileGrid.innerHTML = '<div style="color:#ccc">Nenhuma figurinha coletada.</div>';
+  else {
+    collectedCards.forEach(p=>{
+      const el = document.createElement('div'); el.style.background='#fff'; el.style.color='#000'; el.style.borderRadius='8px'; el.style.padding='8px';
+      el.innerHTML = `<img src="${p.photo}" style="width:100%;height:100px;object-fit:cover;border-radius:6px"><div style="font-weight:700;margin-top:6px">${escapeHtml(p.name)}</div><div style="font-size:12px;color:#444">${escapeHtml(p.country)} • ${escapeHtml(p.position)}</div>`;
+      profileGrid.appendChild(el);
+    });
+  }
+}
+
+/* Init */
+function init(){
+  players = loadPlayers();
+  populateFilter();
+  renderCards(filteredPlayers());
+  currentUser = loadSession();
+  renderStats();
+  renderUserArea();
+  tryOpenPublicFromUrl();
+}
+init();
+
+/* Close modals on ESC */
+document.addEventListener('keydown', (e)=> { if(e.key === 'Escape'){ document.querySelectorAll('.modal').forEach(m=> m.classList.add('hidden')); } });
+</script>
+</body>
+</html>
